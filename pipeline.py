@@ -37,6 +37,41 @@ def recognition(lang_model, image):
   # task = convert_to_ls(image, tesseract_output, file_name, per_level='block_num')
   return tesseract_output
 
+ 
+def hocr(data):
+
+  header = '''
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <meta name='ocr-system' content='tesseract v5.0.1.20220118' />
+    <meta name='ocr-capabilities' content='ocr_page ocr_line'/>
+  </head>
+  <body>
+    <div class='ocr_page' id='page_1'>
+'''
+  lines = []
+  for i, result in enumerate(data['predictions'][0]['result']):
+    img_name = result['img_name']
+    bbox = result['bbox']
+    bbox_str = f"{bbox['x1']} {bbox['y1']} {bbox['x2']} {bbox['y2']}"
+    text = result['text']
+    if text:
+      lines.append(f"\n     <span class='ocr_line' id='line_1_{i+1}' title='bbox {bbox_str}'>{text}</span>")
+
+  for line in lines:
+    header = header + line
+  footers = ['\n    </div>\n',' </body>\n','</html>\n']
+  for footer in footers:
+    header = header + footer
+
+  return header
+
+ 
 def main(args: UploadFile):
   os.environ['USE_TORCH'] = '1'
   image_dir = "testing/"
@@ -92,12 +127,15 @@ def main(args: UploadFile):
           'result': results
       }]
   }
+  
+  hocr_data = hocr(json_file)
+  
   with open("output.json", "w") as outfile:
     json.dump(json_file, outfile, ensure_ascii=False, indent=4)
 
   shutil.rmtree(image_dir)
 
-  return json_file
+  return hocr_data
 
 
 

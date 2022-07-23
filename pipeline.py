@@ -132,7 +132,9 @@ def main(args: UploadFile):
   
   with open("output.json", "w") as outfile:
     json.dump(json_file, outfile, ensure_ascii=False, indent=4)
-
+  with open('output.hocr', 'w') as outfile:
+    outfile.writelines(hocr_data)
+    
   shutil.rmtree(image_dir)
 
   return hocr_data
